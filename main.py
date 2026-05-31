@@ -18,12 +18,12 @@ DB_FILE = "posts_db.json"
 def load_db():
     if not os.path.exists(DB_FILE):
         return []
-    with open(DB_FILE, "r") as f:
+    with open(DB_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def save_db(data):
-    with open(DB_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 def add_post_to_db(post):
     db = load_db()
@@ -45,6 +45,8 @@ def cancel(message):
     user_data.pop(message.chat.id, None)
     bot.send_message(message.chat.id, "❌ Cancelled")
 
+# ----------------- PHOTO STEP -----------------
+
 @bot.message_handler(content_types=['photo'])
 def photo(message):
     if message.from_user.id != ADMIN_ID:
@@ -55,6 +57,8 @@ def photo(message):
     }
 
     bot.send_message(message.chat.id, "✍️ Send Message")
+
+# ----------------- TEXT STEPS -----------------
 
 @bot.message_handler(content_types=['text'])
 def text(message):
@@ -68,13 +72,13 @@ def text(message):
 
     data = user_data[chat_id]
 
-    # STEP 1: caption
+    # STEP 1: caption text
     if "text" not in data:
         data["text"] = message.text
         bot.send_message(chat_id, "🔗 Send Link")
         return
 
-    # STEP 2: link + post
+    # STEP 2: link + finalize post
     if "link" not in data:
         data["link"] = message.text
 
@@ -90,20 +94,12 @@ def text(message):
             "time": time.strftime("%Y-%m-%d %H:%M:%S")
         }
 
-        # ---------------- SAVE TO DB ----------------
+        # SAVE TO DB
         add_post_to_db(post_data)
 
-        # ---------------- ADMIN PREVIEW ----------------
+        # ADMIN PREVIEW ONLY
         bot.send_photo(
             chat_id,
-            data["photo"],
-            caption=data["text"],
-            reply_markup=markup
-        )
-
-        # ---------------- AUTO POST TO CHANNEL ----------------
-        bot.send_photo(
-            CHANNEL,
             data["photo"],
             caption=data["text"],
             reply_markup=markup
