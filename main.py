@@ -1,9 +1,9 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-import time
 
 TOKEN = "8514009693:AAEEdrOEV_8F8FpRsBT6fYWdlBMHenCcMjk"
 ADMIN_ID = 8758830915
+CHANNEL = "@Burmese_Anime"
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -27,7 +27,7 @@ def cancel(message):
     user_data.pop(message.chat.id, None)
     bot.send_message(message.chat.id, "❌ Cancelled")
 
-# ----------------- PHOTO STEP -----------------
+# ----------------- PHOTO -----------------
 
 @bot.message_handler(content_types=['photo'])
 def photo(message):
@@ -64,7 +64,7 @@ def text(message):
         bot.send_message(chat_id, "🔗 Send Link")
         return
 
-    # STEP 2: link + post
+    # STEP 2: link + AUTO POST
     if "link" not in data:
         data["link"] = message.text
 
@@ -73,13 +73,24 @@ def text(message):
             InlineKeyboardButton("ကြည့်ရန်", url=data["link"])
         )
 
-        # ADMIN PREVIEW ONLY
+        # ADMIN PREVIEW
         bot.send_photo(
             chat_id,
             data["photo"],
             caption=data["text"],
             reply_markup=markup
         )
+
+        # ---------------- AUTO POST TO CHANNEL ----------------
+        try:
+            bot.send_photo(
+                CHANNEL,
+                data["photo"],
+                caption=data["text"],
+                reply_markup=markup
+            )
+        except Exception as e:
+            bot.send_message(chat_id, f"❌ Channel Error: {e}")
 
         user_data.pop(chat_id, None)
 
