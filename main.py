@@ -1,12 +1,36 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import json
+import os
+import time
 
 TOKEN = "8514009693:AAEEdrOEV_8F8FpRsBT6fYWdlBMHenCcMjk"
 ADMIN_ID = 8758830915
+CHANNEL = "@Burmese_Anime"
 
 bot = telebot.TeleBot(TOKEN)
 
 user_data = {}
+DB_FILE = "posts_db.json"
+
+# ----------------- DB FUNCTIONS -----------------
+
+def load_db():
+    if not os.path.exists(DB_FILE):
+        return []
+    with open(DB_FILE, "r") as f:
+        return json.load(f)
+
+def save_db(data):
+    with open(DB_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def add_post_to_db(post):
+    db = load_db()
+    db.append(post)
+    save_db(db)
+
+# ----------------- BOT HANDLERS -----------------
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -44,11 +68,13 @@ def text(message):
 
     data = user_data[chat_id]
 
+    # STEP 1: caption
     if "text" not in data:
         data["text"] = message.text
         bot.send_message(chat_id, "🔗 Send Link")
         return
 
+    # STEP 2: link + post
     if "link" not in data:
         data["link"] = message.text
 
@@ -57,8 +83,27 @@ def text(message):
             InlineKeyboardButton("ကြည့်ရန်", url=data["link"])
         )
 
+        post_data = {
+            "photo": data["photo"],
+            "text": data["text"],
+            "link": data["link"],
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        # ---------------- SAVE TO DB ----------------
+        add_post_to_db(post_data)
+
+        # ---------------- ADMIN PREVIEW ----------------
         bot.send_photo(
             chat_id,
+            data["photo"],
+            caption=data["text"],
+            reply_markup=markup
+        )
+
+        # ---------------- AUTO POST TO CHANNEL ----------------
+        bot.send_photo(
+            CHANNEL,
             data["photo"],
             caption=data["text"],
             reply_markup=markup
