@@ -110,7 +110,7 @@ def receive_text(message):
         markup = InlineKeyboardMarkup()
         markup.add(
             InlineKeyboardButton(
-                "👀 ကြည့်ရန်",
+                "ကြည့်ရန်",
                 url=data["link"]
             )
         )
